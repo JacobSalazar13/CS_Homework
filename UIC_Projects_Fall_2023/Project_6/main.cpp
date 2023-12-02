@@ -1,7 +1,7 @@
 /** ---------------------------------------------
-* This program demonstrates arrays, loops, functions and other
-* helpful concepts in C++ that students need to complete the
-* Fifth project Connect 4.
+* This program provides a practical demonstration of key concepts in 
+* C++ programming, focusing on classes, linked lists, nodes, and functions
+* Sixth project Connect 4 with Backtracking.
 * Class: CS 141, Fall 2023
 * System: ZyBook Lab *
 * @author Jacob Salazar
@@ -14,6 +14,8 @@
 #include <vector>
 #include <iomanip>
 using namespace std;
+#include "linkedlist.h"
+
 
 //function to display the initial instructions to the game
 void instructions(){
@@ -34,6 +36,43 @@ void display_board(char board[42]){
         }
     }
 }
+//This function uses a linkedlist object by reference and iterates through the list by grabbing the beginning indexes from the list
+void print_moves(linkedlist& movelist){
+    bool loop = false;
+    int index = 0;
+    int counter = 0;
+    char user;
+    char board_temp[42] = {'-', '-', '-', '-', '-', '-', '-', 
+                      '-', '-', '-', '-', '-', '-', '-', 
+                      '-', '-', '-', '-', '-', '-', '-',
+                      '-', '-', '-', '-', '-', '-', '-', 
+                      '-', '-', '-', '-', '-', '-', '-', 
+                      '-', '-', '-', '-', '-', '-', '-' };
+    //start while loop to iterate through linkedlist     
+    while (loop == false){
+        //grab first index value in the game
+        index = movelist.get_first_index();
+        //if the index returned from the linkedlist get index function then stop loop we are at the end of the list
+        if (index == -1){
+            loop = true;
+        }
+        //have a counter to keep track of which user is playing even is X odd is O
+        if (counter % 2 == 0){
+            user = 'X';
+        }
+        else{
+            user = 'O';
+        }
+        //make move on the board as if it was the start of the game
+        board_temp[index] = user;
+        //print board
+        display_board(board_temp);
+        //delete the beginning node in the linkedlist
+        movelist.delete_first_index();
+        //increase counter
+        counter++;
+    }
+}
 
 //function that gets user input for the column they would like to select
 int choose_move(char piece){
@@ -50,6 +89,15 @@ int choose_move(char piece){
         cout << "Ending Game" << endl;
         exit(1);
     }
+
+    //check for if the user would like to undo a move
+    if (column == "u" || column == "U"){
+        return 100;
+    }
+    //check for if the user would like to print all previous moves
+    if (column == "p" || column == "P"){
+        return 200;
+    }
     //if it is string 0-6 then turn it to int value
     else if (column == "0" || column == "1" || column == "2" || column == "3" || column == "4" || column == "5" || column == "6"){
         col = stoi(column);
@@ -65,18 +113,36 @@ int choose_move(char piece){
 
 
 //edit board variable to input the user move on the board
-char make_move(int column, char board[42], char user){
+char make_move(int column, char board[42], char user, linkedlist& movelist){
     int index;
-    if (column < 0 || column >= 7){
+    //if choose move function returned 100 then undo move
+    if (column == 100){
+        //get the last index of linkedlist
+        index = movelist.get_index();
+        //delete the node at the end
+        movelist.delete_last_from_list();
+        //change the board index returned from get index and set it to initial value
+        board[index] = '-';
+        return 'U';
+    }
+    //if choose move function returned 200 then print moves
+    else if(column == 200){
+        print_moves(movelist);
+    }
+    else if (column < 0 || column >= 7){
         return 'E';
     }
     //iterate through rows starting at the bottom
     //need to check bottom to top and we need to grab the associated index based on the column input
-    for (int i = 5; i >= 0; --i){
-        index = i * 7 + column;
-        if (board[index] == '-'){
-            board[index] = user;
-            return 'S';
+    else{
+        for (int i = 5; i >= 0; --i){
+            index = i * 7 + column;
+            if (board[index] == '-'){
+                board[index] = user;
+                //keep track of the indexes of moves
+                movelist.append_to_list(index);
+                return 'S';
+            }
         }
     }
     return 'F';
@@ -178,13 +244,14 @@ bool check_win(char board[42], char user){
     return false;
 }
 
+
 //driver function
 int main(){
     int counter = 0;
     int column;
     char user;
     char handle;
-    bool win;
+    bool win = false;
     char board[42] = {'-', '-', '-', '-', '-', '-', '-', 
                       '-', '-', '-', '-', '-', '-', '-', 
                       '-', '-', '-', '-', '-', '-', '-',
@@ -196,7 +263,7 @@ int main(){
     instructions();
     display_board(board);
     cout << "Let's get started!!!" << endl;
-
+    linkedlist movelist;
     //while loop that continues to go until win is set to true or when there is a winner detected after scanning board
     while(win == false){
 
@@ -217,7 +284,7 @@ int main(){
         column = choose_move(user);
 
         //edit the board and get a response back
-        handle = make_move(column, board, user);
+        handle = make_move(column, board, user, movelist);
 
         //if the response is E there was an invalid column
         if (handle == 'E'){
@@ -228,6 +295,18 @@ int main(){
         else if (handle == 'S'){
             win = check_win(board, user);
             counter++;
+        }
+        //handle if the user wants to undo a move
+        else if (handle == 'U'){
+            if (counter > 0){
+                //if counter is greater than 0 then decrease counter
+                counter--;
+            }
+            else{
+                //if counter is anything else then set it to 0 and display the board
+                counter = 0;
+                display_board(board);
+            }
         }
         //if the the response was anything else then it is error code column is full
         else {

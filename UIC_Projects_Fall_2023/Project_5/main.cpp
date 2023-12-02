@@ -184,7 +184,7 @@ int main(){
     int column;
     char user;
     char handle;
-    bool win;
+    bool win = false;
     char board[42] = {'-', '-', '-', '-', '-', '-', '-', 
                       '-', '-', '-', '-', '-', '-', '-', 
                       '-', '-', '-', '-', '-', '-', '-',
